@@ -1,49 +1,44 @@
-let controllerState = 0;
+input.onButtonPressed(Button.A, function () {
+    if (controllerState == 0) {
+        // Sends Pairing Request To Laptop
+        serial.writeLine("Care for a game of Tic Tac Toe?Y/N")
+        controllerState = 1
+    }
+})
+input.onButtonPressed(Button.B, function () {
 
-function welcomeScreen(){
+})
+serial.onDataReceived(serial.delimiters(Delimiters.NewLine), () => {
+    if (serial.readLine().includes("Y")) {
+        welcomeScreen()
+    } else {
+        basic.showIcon(IconNames.Sad)
+    }
+})
+function welcomeScreen() {
     basic.showString("Welcome To")
     basic.pause(500)
     basic.showString("Tic Tac Toe")
     basic.pause(500)
     basic.showString("Press A+B to start a new serie")
 }
-
 function promptPairing() {
     radio.setTransmitPower(7)
     radio.setGroup(8)
     radio.setTransmitSerialNumber(true)
-    controllerState = 1
-    basic.showString("Press A to")
-    basic.pause(500)
-    basic.showString("Start Game")
+    basic.showIcon(IconNames.Yes)
 }
+input.onButtonPressed(Button.AB, function () {
+    if (controllerState == 1) {
 
-
-input.onButtonPressed(Button.A, () => {
-    if (controllerState == 0) {
-        //Sends Pairing Request To Laptop
-        controllerState = 1
     }
 })
+radio.onDataPacketReceived(function () {
 
-input.onButtonPressed(Button.B, () => { })
-
-input.onButtonPressed(Button.AB, () => {
-    if(controllerState == 1){
-        //Starts game and go to next stage of table
-    }
 })
-
-radio.onDataPacketReceived(() => 
-{
-    if (name=="accept"){
-        //Com accepted pairing
-        welcomeScreen()
-        //Send to game devices
-        radio.sendValue("start")
-    }
-})
-
+let controllerState = 0
 promptPairing()
-basic.forever(() => {
+// basic.showIcon(IconNames.Yes)
+basic.forever(function () {
+
 })

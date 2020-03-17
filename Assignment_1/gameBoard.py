@@ -28,7 +28,7 @@ def run():
                         raise KeyboardInterrupt
                 if state == 1:
                     if "start" in smsg:
-                        startSerie()
+                        startSerie(ser)
          
             # print("State is " + str(state) + "; Msg is " + smsg)
             time.sleep(1)
@@ -39,8 +39,9 @@ def run():
         print("Program terminated!")
 
 
-def startSerie():
-    print("Starting Serie.Anyone can start ")
+def startSerie(ser):
+    ser.write(b'start serie\r\n')
+    print("Serie Started!!! Any player can press 'A' to start the first game")
 
 
 if __name__ == "__main__":

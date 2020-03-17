@@ -1,23 +1,47 @@
 import serial
-import time 
+import time
 
-print("Listening on COM Port 5... Press CTRL+C to exit")
 
-try:
-    ser = serial.Serial(port='COM5', baudrate=115200, timeout=1)
-    # Read newline terminated data
-    while True:
-        msg = ser.readline()
-        smsg = msg.decode('utf-8').strip()
-        if len(smsg) > 0:
-            print('RX:{}'.format(smsg))
-            line = input("")
-            res = line + "\r\n"
-            # Write newline terminated data
-            ser.write(res.encode())
-        time.sleep(1)
+def run():
+    print("Listening on COM Port 5... Press CTRL+C to exit")
+    state = 0
+    try:
+        ser = serial.Serial(port="COM4", baudrate=115200, timeout=1)
+        # Read newline terminated data
+        while True:
+            msg = ser.readline()
+            smsg = msg.decode("utf-8").strip()
+            if len(smsg) > 0:
+                print("RX:{}".format(smsg))
+                if state == 0:
+                    line = input("")
+                    res = line + "\r\n"
+                    # Write newline terminated data
+                    ser.write(res.encode())
+                    if line == "Y":
+                        print(
+                            "Welcome To Tic Tac Toe. Click A+B on game controller to start a serie"
+                        )
+                        state = 1
+                    else:
+                        print("Oh Man What A Shame :( ")
+                        raise KeyboardInterrupt
+                if state == 1:
+                    if "start" in smsg:
+                        startSerie()
+         
+            # print("State is " + str(state) + "; Msg is " + smsg)
+            time.sleep(1)
 
-except KeyboardInterrupt:
-	if ser.is_open:
-		ser.close()
-	print("Program terminated!") 
+    except KeyboardInterrupt:
+        if ser.is_open:
+            ser.close()
+        print("Program terminated!")
+
+
+def startSerie():
+    print("Starting Serie.Anyone can start ")
+
+
+if __name__ == "__main__":
+    run()

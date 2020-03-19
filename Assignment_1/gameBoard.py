@@ -29,8 +29,11 @@ def run():
                 if state == 1:
                     if "start" in smsg:
                         startSerie(ser)
-         
-            # print("State is " + str(state) + "; Msg is " + smsg)
+                        state = 2
+                if state == 2:
+                    if "Start Game" in smsg:
+                        startGame(ser)
+                        state = 3
             time.sleep(1)
 
     except KeyboardInterrupt:
@@ -40,9 +43,24 @@ def run():
 
 
 def startSerie(ser):
-    ser.write(b'start serie\r\n')
-    print("Serie Started!!! Any player can press 'A' to start the first game")
+    res = "serie\r\n"
+    ser.write(res.encode())
+    print(
+        "Serie Started!!! Any player can press 'A' on the game controller to start the first game"
+    )
+
+
+def startGame(ser):
+    res = "game\r\n"
+    ser.write(res.encode())
+    print("Game Started!! Choose a board size from 3 to 10 !!")
 
 
 if __name__ == "__main__":
     run()
+
+# States
+# 0 : Initial Request To Play Game
+# 1 : Starting of a new serie
+# 2 : Starting of new game
+

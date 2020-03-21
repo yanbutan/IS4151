@@ -1,3 +1,91 @@
+function promptPairing() {
+    radio.setTransmitPower(7)
+    radio.setGroup(8)
+    radio.setTransmitSerialNumber(true)
+    basic.showIcon(IconNames.Yes)
+}
+input.onButtonPressed(Button.A, function () {
+    if (controllerState == 0) {
+        // Sends Pairing Request To Devices
+        radio.sendValue("ttt", 0)
+    } else if (controllerState == 1) {
+        // Sends Pairing Request To Laptop
+        serial.writeLine("Care for a game of Tic Tac Toe?Y/N")
+    } else if (controllerState == 3) {
+        // Tells Game Board That A Game Has Been Started
+        serial.writeLine("A Pressed. Start Game.")
+    } else if (controllerState == 4) {
+        chooseBoardSize()
+    }
+})
+input.onButtonPressed(Button.B, function () {
+    if (controllerState == 4) {
+        serial.writeValue("size", boardSizeState)
+    }
+})
+serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+    if (serial.readLine().includes("Y")) {
+        if (controllerState == 1) {
+            controllerState = 2
+            welcomeScreen()
+        }
+    }
+    if (serial.readLine().includes("serie")) {
+        if (controllerState == 2) {
+            controllerState = 3
+            // basic.showString("Initiated " + serieID)
+            // basic.showString("Press A to start a game")
+            basic.showIcon(IconNames.Diamond)
+        }
+    }
+    if (serial.readLine().includes("game")) {
+        if (controllerState == 3) {
+            controllerState = 4
+            // basic.showString("Choose Board Size")
+            basic.showLeds(`
+                . . # # .
+                . # . . .
+                . . # . .
+                . . . # .
+                . # # . .
+                `)
+        }
+    }
+    if (serial.readLine().includes("board")) {
+        if (controllerState == 4) {
+            controllerState = 5
+            currentP = Math.random() < 0.5 ? player1 : player2
+            radio.sendValue("firstP", currentP)
+            if (currentP == player1) {
+                basic.showString("P1 Starts")
+            } else {
+                basic.showString("P2 Starts")
+            }
+        }
+    }
+    if (serial.readLine().includes("next")) {
+        basic.showIcon(IconNames.Asleep)
+    }
+    if (serial.readLine().includes("notempty")) {
+        basic.showIcon(IconNames.Confused)
+        music.playTone(262, music.beat(BeatFraction.Whole))
+    }
+
+    // if (serial.readLine().includes("next")) {
+    //     if (controllerState == 5) {
+    //         controllerState = 6
+    //         basic.showIcon(IconNames.Asleep)
+    //     }
+    //     else if (controllerState == 6) {
+    //         controllerState = 5
+    //         basic.showIcon(IconNames.Asleep)
+    //     }
+    // }
+    // if (serial.readLine().includes("notempty")) {
+    //     basic.showIcon(IconNames.Confused)
+    //     music.playTone(262, music.beat(BeatFraction.Whole))
+    // }
+})
 function chooseBoardSize() {
     if (boardSizeState == 2 || boardSizeState == 10) {
         boardSizeState = 3
@@ -73,91 +161,6 @@ function chooseBoardSize() {
             `)
     }
 }
-input.onButtonPressed(Button.A, function () {
-    if (controllerState == 0) {
-        // Sends Pairing Request To Devices
-        radio.sendValue("ttt", 0)
-    } else if (controllerState == 1) {
-        // Sends Pairing Request To Laptop
-        serial.writeLine("Care for a game of Tic Tac Toe?Y/N")
-    } else if (controllerState == 3) {
-        // Tells Game Board That A Game Has Been Started
-        serial.writeLine("A Pressed. Start Game.")
-    } else if (controllerState == 4) {
-        chooseBoardSize()
-    }
-})
-input.onButtonPressed(Button.B, function () {
-    if (controllerState == 4) {
-        serial.writeValue("size", boardSizeState)
-    }
-})
-serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
-    if (serial.readLine().includes("Y")) {
-        if (controllerState == 1) {
-            controllerState = 2
-            welcomeScreen()
-        }
-    }
-    if (serial.readLine().includes("serie")) {
-        if (controllerState == 2) {
-            controllerState = 3
-            // basic.showString("Initiated " + serieID)
-            // basic.showString("Press A to start a game")
-            basic.showIcon(IconNames.Diamond)
-        }
-    }
-    if (serial.readLine().includes("game")) {
-        if (controllerState == 3) {
-            controllerState = 4
-            // basic.showString("Choose Board Size")
-            basic.showLeds(`
-                . . # # .
-                . # . . .
-                . . # . .
-                . . . # .
-                . # # . .
-                `)
-        }
-    }
-    if (serial.readLine().includes("board")) {
-        if (controllerState == 4) {
-            controllerState = 5
-            currentP = Math.random() < 0.5 ? player1 : player2
-            radio.sendValue("firstP", currentP)
-            if (currentP == player1) {
-                basic.showString("P1 Starts")
-            }
-            else {
-                basic.showString("P2 Starts")
-            }
-        }
-    }
-    if (serial.readLine() == "P2Turn\r") {
-        if (controllerState == 5) {
-            basic.showIcon(IconNames.Ghost)
-            controllerState = 6
-        }
-    }
-    if (serial.readLine() == "P1Turn\r") {
-        if (controllerState == 6) {
-            basic.showIcon(IconNames.Angry)
-            controllerState = 5
-        }
-    }
-})
-function welcomeScreen() {
-    basic.showIcon(IconNames.Happy)
-    // basic.showString("Tic Tac Toe")
-    // basic.pause(500)
-    // basic.showString("Press A+B for a new serie")
-}
-function promptPairing() {
-    radio.setTransmitPower(7)
-    radio.setGroup(8)
-    radio.setTransmitSerialNumber(true)
-    basic.showIcon(IconNames.Yes)
-}
 radio.onDataPacketReceived(function ({ receivedString: name, receivedNumber: value }) {
     if (name == "yes" && controllerState == 0 && player1 == 0) {
         player1 = value
@@ -168,14 +171,13 @@ radio.onDataPacketReceived(function ({ receivedString: name, receivedNumber: val
         basic.showString("P2")
         controllerState = 1
     }
-    if (name == "chosen" && controllerState == 5) {
-        serial.writeValue("p1coor", value)
+    if (name.includes("chosen")) {
+        serial.writeLine(name)
     }
-    if (name == "chosen" && controllerState == 6) {
-        serial.writeValue("p2coor", value)
-    }
-
 })
+function welcomeScreen() {
+    basic.showIcon(IconNames.Happy)
+}
 input.onButtonPressed(Button.AB, function () {
     if (controllerState == 2) {
         serial.writeLine("start")
@@ -186,12 +188,13 @@ input.onButtonPressed(Button.AB, function () {
         radio.sendString("startGame")
     }
 })
-let player2 = 0
-let player1 = 0
 let serieID = 0
 let controllerState = 0
-let boardSizeState = 2
+let boardSizeState = 0
 let currentP = 0
+let player1 = 0
+let player2 = 0
+boardSizeState = 2
 promptPairing()
 let display = grove.createDisplay(DigitalPin.P2, DigitalPin.P16)
 // basic.showIcon(IconNames.Yes)
@@ -207,6 +210,7 @@ basic.forever(function () {
         display.bit(p2SecondDigit, 3)
     }
 })
+
 
 
 //0 : initial state

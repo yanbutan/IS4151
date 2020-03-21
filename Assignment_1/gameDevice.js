@@ -16,8 +16,8 @@ input.onButtonPressed(Button.B, function () {
 input.onButtonPressed(Button.AB, function () {
     if (deviceState == 3) {
         deviceState = 4
-        let coor = xCoor * 10 + yCoor
-        radio.sendValue("chosen", coor)
+        let coor = xCoor.toString() + ":" + yCoor.toString()
+        radio.sendString("chosen:" + coor)
         xCoor = -1
         yCoor = -1
         basic.showLeds(`
@@ -65,7 +65,7 @@ radio.onDataPacketReceived(function ({ receivedString: name, receivedNumber: val
                 # . . . #
                 `)
         }
-    } else if (name == "chosen") {
+    } else if (name.includes("chosen")) {
         if (deviceState == 2) {
             deviceState = 3
             basic.showLeds(`
@@ -193,6 +193,7 @@ basic.showIcon(IconNames.Yes)
 basic.forever(function () {
 
 })
+
 
 
 

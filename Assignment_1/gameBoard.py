@@ -3,13 +3,14 @@ import time
 
 
 def run():
-    print("Listening on COM Port 5... Press CTRL+C to exit")
+    print("Listening on COM Port 3... Press CTRL+C to exit")
     state = 0
+    not_empty_counter = 0
     current_player = 0
     rows, cols = (0, 0)
     board = [[0 for i in range(cols)] for j in range(rows)]
     try:
-        ser = serial.Serial(port="COM4", baudrate=115200, timeout=1)
+        ser = serial.Serial(port="COM3", baudrate=115200, timeout=1)
         # Read newline terminated data
         while True:
             msg = ser.readline()
@@ -46,36 +47,23 @@ def run():
                         show_game_board(ser, board)
                         state = 4
                 if state == 4:
-                    if "p1coor" in smsg or "p2coor" in smsg:
-                        print("In the choosing crid method")
-                        x_cor = 0
-                        y_cor = 0
-                        try:
-                            x_cor = int(smsg.split(":")[1][0])
-                        except ValueError:
-                            x_cor = 0
-
-                        try:
-                            y_cor = int(smsg.split(":")[1][1])
-                        except ValueError:
-                            y_cor = 0
-
+                    if "chosen" in smsg:
+                        x_cor = int(smsg.split(":")[1])
+                        y_cor = int(smsg.split(":")[2])
                         # Checks that the grid is empty first
                         if check_empty(x_cor, y_cor, board):
                             mark = ""
-                            if "p1coor" in smsg:
-                                current_player = 1
-                                # check n in a row
-                                board[x_cor][y_cor] = "X"
-                                p2_turn(ser, board)
-                            elif "p2coor" in smsg:
+                            if current_player == 1 or current_player == 0:
                                 current_player = 2
-                                # check n in a row
-                                board[x_cor][y_cor] = "O"
-                                p1_turn(ser, board)
-
+                                mark = "X"
+                            elif current_player == 2:
+                                current_player = 1
+                                mark = "O"
+                            board[x_cor][y_cor] = mark
+                            next_player(ser,board,current_player)
                         else:
-                            grid_not_empty(ser)
+                            not_empty_counter += 1
+                            grid_not_empty(ser,not_empty_counter)
             time.sleep(1)
 
     except KeyboardInterrupt:
@@ -113,24 +101,17 @@ def check_empty(x, y, board):
         return False
 
 
-def grid_not_empty(ser):
-    ser.write(b"notempty\r\n")
+def grid_not_empty(ser,counter):
     print("Grid is filled. Please choose another one")
+    res = "notempty"+str(counter)+"\r\n"
+    ser.write(res.encode())
 
-
-def p2_turn(ser, board):
-    ser.write("P2Turn\r".encode())
-    print("P2's Turn")
+def next_player(ser,board,player):
+    print("Player " + str(player) + "'s Turn")
+    res = "next"+str(player)+ "\r\n"
+    ser.write(res.encode())
     for row in board:
         print(row)
-
-
-def p1_turn(ser, board):
-    ser.write("P1Turn\r".encode())
-    print("P1's Turn")
-    for row in board:
-        print(row)
-
 
 if __name__ == "__main__":
     run()

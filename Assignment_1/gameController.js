@@ -21,16 +21,23 @@ input.onButtonPressed(Button.A, function () {
 input.onButtonPressed(Button.B, function () {
     if (controllerState == 4) {
         serial.writeValue("size", boardSizeState)
+        boardSizeState = 2
+    } else if (controllerState >= 5) {
+        controllerState = 3
+        basic.showIcon(IconNames.Diamond)
+        serial.writeLine("endgame")
+        radio.sendString("endgame")
     }
 })
 serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
-    if (serial.readLine().includes("Y")) {
+    temp = serial.readLine()
+    if (temp.includes("Y")) {
         if (controllerState == 1) {
             controllerState = 2
             welcomeScreen()
         }
     }
-    if (serial.readLine().includes("serie")) {
+    if (temp.includes("serie")) {
         if (controllerState == 2) {
             controllerState = 3
             // basic.showString("Initiated " + serieID)
@@ -38,7 +45,7 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
             basic.showIcon(IconNames.Diamond)
         }
     }
-    if (serial.readLine().includes("game")) {
+    if (temp.includes("game")) {
         if (controllerState == 3) {
             controllerState = 4
             // basic.showString("Choose Board Size")
@@ -51,40 +58,58 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
                 `)
         }
     }
-    if (serial.readLine().includes("board")) {
+    if (temp.includes("board")) {
         if (controllerState == 4) {
             controllerState = 5
-            currentP = Math.random() < 0.5 ? player1 : player2
+            currentP = Math.random() < 0.5 ? 1 : 2
             radio.sendValue("firstP", currentP)
-            if (currentP == player1) {
+            if (currentP == 1) {
                 basic.showString("P1 Starts")
             } else {
                 basic.showString("P2 Starts")
             }
         }
     }
-    if (serial.readLine().includes("next")) {
-        basic.showIcon(IconNames.Asleep)
+    if (temp.includes("next")) {
+        basic.showIcon(IconNames.Happy)
+        music.playTone(587, music.beat(BeatFraction.Eighth))
+        radio.sendString("valid")
     }
-    if (serial.readLine().includes("notempty")) {
+    if (temp.includes("notempty")) {
         basic.showIcon(IconNames.Confused)
-        music.playTone(262, music.beat(BeatFraction.Whole))
+        music.playTone(139, music.beat(BeatFraction.Half))
+        radio.sendString("notempt")
     }
-
-    // if (serial.readLine().includes("next")) {
-    //     if (controllerState == 5) {
-    //         controllerState = 6
-    //         basic.showIcon(IconNames.Asleep)
-    //     }
-    //     else if (controllerState == 6) {
-    //         controllerState = 5
-    //         basic.showIcon(IconNames.Asleep)
-    //     }
-    // }
-    // if (serial.readLine().includes("notempty")) {
-    //     basic.showIcon(IconNames.Confused)
-    //     music.playTone(262, music.beat(BeatFraction.Whole))
-    // }
+    if (temp.includes("outside")) {
+        music.playTone(139, music.beat(BeatFraction.Half))
+        basic.showLeds(`
+            # . . . .
+            . # . . .
+            . . # . .
+            . . . # .
+            . . . . #
+            `)
+        radio.sendString("outside")
+    }
+    if (temp.includes("ninrow")) {
+        music.beginMelody(music.builtInMelody(Melodies.BaDing), MelodyOptions.Once)
+        winner = parseInt(temp.charAt(0))
+        radio.sendValue("winningP", winner)
+        if (winner == 1) {
+            p1score += 1
+        } else {
+            p2score += 1
+        }
+        controllerState = 3
+        basic.showString("A for new game")
+    }
+    if (temp.includes("full")) {
+        music.beginMelody(music.builtInMelody(Melodies.Dadadadum), MelodyOptions.Once)
+        controllerState = 3
+        basic.showIcon(IconNames.Diamond)
+        serial.writeLine("endgame")
+        radio.sendString("endgame")
+    }
 })
 function chooseBoardSize() {
     if (boardSizeState == 2 || boardSizeState == 10) {
@@ -163,15 +188,17 @@ function chooseBoardSize() {
 }
 radio.onDataPacketReceived(function ({ receivedString: name, receivedNumber: value }) {
     if (name == "yes" && controllerState == 0 && player1 == 0) {
-        player1 = value
+        player1 = 1
+        radio.sendString("1pnum")
         basic.showString("P1")
     }
-    if (name == "yes" && controllerState == 0 && player1 != 0) {
-        player2 = value
+    else if (name == "yes" && controllerState == 0 && player1 != 0) {
+        player2 = 2
+        radio.sendString("2pnum")
         basic.showString("P2")
         controllerState = 1
     }
-    if (name.includes("chosen")) {
+    else if (name.includes("chosen")) {
         serial.writeLine(name)
     }
 })
@@ -187,31 +214,50 @@ input.onButtonPressed(Button.AB, function () {
     if (controllerState == 3) {
         radio.sendString("startGame")
     }
+    if (controllerState > 3) {
+        if (p1score > p2score) {
+            overallwinner = player1
+            p1score = 88
+            p2score = 0
+        } else if (p2score > p1score) {
+            overallwinner = player2
+            p2score = 88
+            p1score = 0
+        } else {
+            p1score = 88
+            p2score = 88
+        }
+        radio.sendValue("endSerie", overallwinner)
+        serial.writeLine(`endSerie:${overallwinner}`)
+        music.beginMelody(music.builtInMelody(Melodies.Prelude), MelodyOptions.Once)
+        basic.showIcon(IconNames.Snake)
+    }
 })
+let overallwinner = 0
 let serieID = 0
+let player2 = 0
+let player1 = 0
+let p2score = 0
+let p1score = 0
+let winner = 0
 let controllerState = 0
 let boardSizeState = 0
 let currentP = 0
-let player1 = 0
-let player2 = 0
+let temp = ""
+let player = ""
 boardSizeState = 2
 promptPairing()
 let display = grove.createDisplay(DigitalPin.P2, DigitalPin.P16)
 // basic.showIcon(IconNames.Yes)
 basic.forever(function () {
-    if (controllerState == 3) {
-        let p2SecondDigit = 0
-        let p2FirstDigit = 0
-        let p1SecondDigit = 0
-        let p1FirstDigit = 0
-        display.bit(p1FirstDigit, 0)
-        display.bit(p1SecondDigit, 1)
-        display.bit(p2FirstDigit, 2)
-        display.bit(p2SecondDigit, 3)
+    if (controllerState >= 3) {
+        display.bit(p1score / 10, 0)
+        display.bit(p1score % 10, 1)
+        display.point(true)
+        display.bit(p2score / 10, 2)
+        display.bit(p2score % 10, 3)
     }
 })
-
-
 
 //0 : initial state
 //1 : handshake with game devices done

@@ -247,9 +247,3 @@ basic.showIcon(IconNames.Yes)
 basic.forever(function () {
 
 })
-
-// 0 : initial state
-// 1 : handshake done
-// 2 : serie init done
-// 3 : selecting coordinates
-// 4 :

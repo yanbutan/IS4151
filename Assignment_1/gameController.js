@@ -258,9 +258,3 @@ basic.forever(function () {
         display.bit(p2score % 10, 3)
     }
 })
-
-//0 : initial state
-//1 : handshake with game devices done
-//2 : handshake with game board done
-//3 : serie initialization done
-//4 : game board size chosen
